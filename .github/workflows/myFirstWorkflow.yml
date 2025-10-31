@@ -1,85 +1,42 @@
-name: my-first-workflow
-# To get a trigger on every push in this repo in any branch
+name: Python Flask CI
+
 on:
   push:
     branches:
+      - dev
+      - 'feature-*'
       - main
-  pull_request:
-    branches:
-      - main
-env:
-  ENV_TYPE: DEV
-  APP_USER: thinknyx
-  APP_PORT: 80
-  
+
 jobs:
-  job1:
-    name: JOB1
+  test:
     runs-on: ubuntu-latest
-    steps: 
-      - name: Step-1
-        run: |
-          pwd
-          ls -ltr
-          hostname
-      - name: Step-2 - Checkout
-        uses: actions/checkout@v5.0.0
-      - name: Step-3
-        run: |
-          echo `pwd` >> myartifact.txt
-          mkdir artifacts
-          echo `ls -ltr` >> artifacts/list.txt
-          echo `hostname` >> artifacts/hostname.txt
-      - name: Upload Single file
-        uses: actions/upload-artifact@v5.0.0
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: single_file
-          path: ./myartifact.txt
-  job2:
-    name: JOB2
-    needs: job1
-    runs-on: ubuntu-latest
-    steps: 
-      - name: Download single file artifact
-        uses: actions/download-artifact@v5.0.0
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run Unit Tests and Generate Report
+        run: |
+          mkdir -p reports
+          pytest --junitxml=reports/unit-test-results.xml --cov=. --cov-report=xml --cov-report=term-missing -v
+
+      - name: Upload Test Report as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: single_file
-      - name: Referring Environment Variables
+          name: unit-test-report
+          path: reports/
+
+      - name: Display Coverage Summary
         run: |
-          echo "[INFO] Running Deployment for $ENV_TYPE with user $APP_USER."
-          echo "[INFO] Once deployment application is accessible on port $APP_PORT."
-      - name: Referring Repository Secret
-        run: |
-          echo "[INFO] Application password is ${{ secrets.APP_PASSWORD }}"
-  job3:
-    name: JOB3
-    runs-on: ubuntu-latest
-    steps:
-      - name: Referring context or in-built variables
-        run: |
-          echo "[INFO] Triggered by ${{ github.event_name }}."
-          echo "[INFO] New changes are added by ${{ github.actor }} in ${{ github.head_ref }} branch."
-          echo "[INFO] Current Step is running on ${{ runner.os }}."
-          echo "[INFO] Current JOB ID is ${{ job.check_run_id }}."
-  staging:
-    name: STAGE DEPLOYMENT
-    runs-on: ubuntu-latest
-    steps:
-      - name: Referring Environment Variables
-        run: echo "[INFO] Running deployment on ${{ vars.HOST }} using ${{ vars.USER }}."
-      - name: Referring Environment Secrets
-        run: echo "[INFO] Password for ${{ vars.USER }} is ${{ secrets.PASSWORD }}."
-    environment:
-      name: STAGING
-    if: github.head_ref == 'dev'
-  production:
-    name: PRODUCTION DEPLOYMENT
-    runs-on: ubuntu-latest
-    steps:
-      - name: Referring Environment Variables
-        run: echo "[INFO] Running deployment on ${{ vars.HOST }} using ${{ vars.USER }}."
-      - name: Referring Environment Secrets
-        run: echo "[INFO] Password for ${{ vars.USER }} is ${{ secrets.PASSWORD }}."
-    environment:
-      name: PRODUCTION
-    if: github.ref == 'refs/heads/main'
+          echo "==== Coverage Summary ===="
+          cat reports/coverage.xml | grep "<coverage" || echo "Coverage report not found"
