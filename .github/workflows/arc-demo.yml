@@ -1,0 +1,12 @@
+name: ARC Test
+on: [push]
+jobs:
+  build:
+    runs-on: [self-hosted, arc-demo]
+    steps:
+      - name: Print Environment Info
+        run: |
+          echo "Running on: $(hostname)"
+          cat /etc/os-release
+          echo "Runner name: $RUNNER_NAME"
+          sleep 60
