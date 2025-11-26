@@ -16,8 +16,8 @@ jobs:
   ci-pipeline-job:
     uses: kulbhushanmayer/reusable-workflows/.github/workflows/ci-pipeline.yml@main
     with:
-      run_codeql: false
-      run_sonarqube: false
+      run_codeql: true
+      run_sonarqube: true
       run_build: true
       run_ghcr_publish: true
     secrets:
@@ -42,18 +42,16 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           kubectl version
           kubectl get nodes
+      
       - name: Install yq
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
           sudo chmod +x /usr/local/bin/yq
+          yq --version
 
-      - name: Update Image in Kubernetes Manifest (YAML-safe)
+      - name: Update Image name in Deployment YAML
         run: |
-          IMAGE_TAG="${{ needs.build.outputs.image-tags }}"
-          IMAGE="${{ inputs.image_name }}:${IMAGE_TAG}"
-
-          yq eval \
-            '.spec.template.spec.containers[0].image = strenv(IMAGE)' \
-            k8s/deployment.yaml -i
+          IMAGE_TAGS="${{ github.run_id }}-${GITHUB_SHA::7}"
+          IMAGE="ghcr.io/kulbhushanmayer/thinknyx_app:${IMAGE_TAGS}"
+          yq e '.spec.template.spec.containers[0].image = "${IMAGE}"' -i k8s/deployment.yaml
           cat k8s/deployment.yaml
-      
