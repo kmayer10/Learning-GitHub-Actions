@@ -32,7 +32,7 @@ jobs:
       IMAGE_NAME: ghcr.io/kulbhushanmayer/thinknyx_app
     secrets:
       KUBECONFIG: ${{ secrets.KUBECONFIG }}
-  selenimum-tests:
+  selenium-tests:
     environment: STAGING
     needs: deploy-with-kubectl
     runs-on: github-actions-scaleset-demo
@@ -62,7 +62,7 @@ jobs:
           mkdir -p reports
           pytest tests/ --html=reports/selenium-report.html --self-contained-html
       - name: Upload Selenium Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: selenium-test-report
           path: reports/
