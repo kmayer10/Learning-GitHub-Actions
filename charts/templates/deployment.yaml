@@ -19,7 +19,7 @@ spec:
       annotations:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
     spec:
-      {{- if .Values.imagePullSecrets }}
+      {{ - if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- range .Values.imagePullSecrets }}
         - name: {{ .name }}
