@@ -29,7 +29,7 @@ jobs:
         run: helm version
 
       - name: Lint chart
-        run: helm lint charts/thinknyxapp
+        run: helm lint charts/
 
       - name: Package chart
         run: |
