@@ -11,11 +11,12 @@ permissions:
 
 env:
   OCI_REGISTRY: ghcr.io
-  OCI_REPO: ${{ github.repository_owner }}/helm-charts  # where chart will be pushed
+  OCI_REPO: ${{ github.repository_owner }}/helm-charts
 
 jobs:
   package-and-publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -23,30 +24,32 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.12.0  # pick a helm v3 version that supports OCI
+          version: v3.12.0
 
-      - name: Show helm version
+      - name: Helm version
         run: helm version
 
-      - name: Lint chart
+      - name: Lint Helm chart
         run: helm lint charts/
 
-      - name: Package chart
+      - name: Package Helm chart
         run: |
-          cd charts/
-          helm package . --destination ../packaged
+          mkdir -p packaged
+          helm package charts/* --destination packaged
 
-      - name: Authenticate to GHCR (OCI)
+      - name: Login to GHCR (OCI)
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.OCI_REGISTRY }} --username ${{ github.actor }} --password-stdin
-        # note: helm registry login supports this pattern
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+          | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
 
-      - name: Push chart to GHCR OCI
+      - name: Push Helm chart to GHCR
         run: |
-          cd ../packaged
-          for tgz in *.tgz; do
-            helm push "$tgz" oci://${{ env.OCI_REGISTRY }}/${{ env.OCI_REPO }};
+          cd packaged
+          for chart in *.tgz; do
+            helm push "$chart" oci://${{ env.OCI_REGISTRY }}/${{ env.OCI_REPO }}
           done
 
-      - name: Logout helm registry
-        run: helm registry logout ${{ env.OCI_REGISTRY }}
+      - name: Logout Helm registry
+        run: helm registry logout ghcr.io
