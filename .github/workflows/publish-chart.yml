@@ -44,7 +44,7 @@ jobs:
 
       - name: Push chart to GHCR OCI
         run: |
-          cd ../packaged
+          cd packaged
           for tgz in *.tgz; do
             helm push "$tgz" oci://${{ env.OCI_REGISTRY }}/${{ env.OCI_REPO }};
           done
