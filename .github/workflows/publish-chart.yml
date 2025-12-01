@@ -33,7 +33,7 @@ jobs:
 
       - name: Package chart
         run: |
-          cd charts/thinknyxapp
+          cd charts/
           helm package . --destination ../packaged
 
       - name: Authenticate to GHCR (OCI)
